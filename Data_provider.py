@@ -56,6 +56,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from utils import transforms as trans 
     transform_train = trans.Compose([
+          trans.RandomScale((0.5,2.0)),
+          trans.RandomCrop(513),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
@@ -70,16 +72,16 @@ if __name__ == '__main__':
 
     dataloader = DataLoader(voc_train, batch_size=3, shuffle=True, num_workers=0)
     
-    for i, img, tag in enumerate(dataloader):
+    for (img, tag) in dataloader:
         image = img[0]
-        target = tar[0]
-        target = target.numpy().astype(np.unit8)
-        image = image.tronspose((1,2,0))
+        target = tag[0]
+        image = image.numpy()
+        target = target.numpy().astype(np.uint8)
+        image = image.transpose((1,2,0))
         image *= (0.229, 0.224, 0.225)
         image += (0.485, 0.456, 0.406)
         image *= 255.0
-        image = image.numpy()
-        image = image.astype(np.unit8)
+        image = image.astype(np.uint8)
         plt.figure()
         plt.title('display')
         plt.subplot(211)
