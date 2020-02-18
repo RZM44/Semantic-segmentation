@@ -16,7 +16,7 @@ class VOCSegmentation(data.Dataset):
         self.root = os.path.expanduser(root)
         _voc_root = self.root
         _train_dir = os.path.join(_voc_root, 'VOCdevkit/VOC2012/JPEGImages/')
-        _val_dir = os.path.join(_voc_root,'SegmentationClassAug')
+        _label_dir = os.path.join(_voc_root,'SegmentationClassAug')
         self.transform = transform
         self.train = train
         self.crop_size = crop_size
@@ -33,7 +33,7 @@ class VOCSegmentation(data.Dataset):
         with open(_list_f, 'r') as lines:
             for line in lines:
                 data = os.path.join(_train_dir, line.rstrip('\n') + ".jpg")
-                lable = os.path.join(_val_dir,line.rstrip('\n') + ".png")
+                lable = os.path.join(_label_dir, line.rstrip('\n') + ".png")
                 assert os.path.isfile(data),"no data in:" + data
                 assert os.path.isfile(lable),"no label in:" + lable
                 self.datas.append(data)
@@ -89,4 +89,4 @@ if __name__ == '__main__':
         plt.subplot(212)
         plt.imshow(target)
         break
-        plt.show(block=True)
+    plt.show(block=True)
