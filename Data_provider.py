@@ -3,7 +3,6 @@ import os
 import numpy as np
 from PIL import Image
 import torch.utils.data as data
-
 class VOCSegmentation(data.Dataset):
     CLASSES = [
         'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -54,7 +53,8 @@ class VOCSegmentation(data.Dataset):
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
-    from utils import transforms as trans 
+    from utils import transforms as trans
+    import numpy as np
     transform_train = trans.Compose([
           trans.RandomScale((0.5,2.0)),
           trans.RandomCrop(513),
