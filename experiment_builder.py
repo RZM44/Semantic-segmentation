@@ -20,7 +20,7 @@ class ExperimentBuilder(nn.Module):
     self.experiment_name = experiment_name
     self.model = network_model
     self.model.reset_parameters()
-    self.nclass = num_class
+    self.num_class = num_class
     self.learn_rate = learn_rate
     self.mementum = mementum
     self.weight_decay = weight_decay
@@ -60,36 +60,33 @@ class ExperimentBuilder(nn.Module):
     self.experiment_logs = os.path.abspath(os.path.join(self.experiment_folder, "result_outputs"))
     self.experiment_saved_models = os.path.abspath(os.path.join(self.experiment_folder, "saved_models"))
     print(self.experiment_folder, self.experiment_logs)
-    # Set best models to be at 0 since we are just starting
     self.best_val_model_idx = 0
     self.best_val_model_acc = 0.
 
-    if not os.path.exists(self.experiment_folder):  # If experiment directory does not exist
-        os.mkdir(self.experiment_folder)  # create the experiment directory
+    if not os.path.exists(self.experiment_folder): 
+        os.mkdir(self.experiment_folder) 
 
     if not os.path.exists(self.experiment_logs):
-        os.mkdir(self.experiment_logs)  # create the experiment log directory
+        os.mkdir(self.experiment_logs)  
 
     if not os.path.exists(self.experiment_saved_models):
-        os.mkdir(self.experiment_saved_models)  # create the experiment saved models directory
+        os.mkdir(self.experiment_saved_models) 
     
     if continue_from_epoch == -2:
         try:
             self.best_val_model_idx, self.best_val_model_acc, self.state = self.load_model(
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
-                model_idx='latest')  # reload existing model from epoch and return best val model index
-            # and the best val acc of that model
+                model_idx='latest')  
             self.starting_epoch = self.state['current_epoch_idx']
         except:
             print("Model objects cannot be found, initializing a new model and starting from scratch")
             self.starting_epoch = 0
                 self.state = dict()
 
-        elif continue_from_epoch != -1:  # if continue from epoch is not -1 then
+        elif continue_from_epoch != -1:  
             self.best_val_model_idx, self.best_val_model_acc, self.state = self.load_model(
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
-                model_idx=continue_from_epoch)  # reload existing model from epoch and return best val model index
-            # and the best val acc of that model
+                model_idx=continue_from_epoch)  
             self.starting_epoch = self.state['current_epoch_idx']
         else:
             self.starting_epoch = 0
@@ -144,24 +141,24 @@ class ExperimentBuilder(nn.Module):
                     model_idx))))))
 
     def run_training_epoch(self, current_epoch_losses):
-        with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  # create a progress bar for training
-            for idx, (image, target) in enumerate(self.train_data):  # get data batches
-                loss, miou = self.run_train_iter(image, target)  # take a training iter step
-                current_epoch_losses["train_loss"].append(loss)  # add current iter loss to the train loss list
-                current_epoch_losses["train_miou"].append(accuracy)  # add current iter acc to the train acc list
+        with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  
+            for idx, (image, target) in enumerate(self.train_data): 
+                loss, miou = self.run_train_iter(image, target)  
+                current_epoch_losses["train_loss"].append(loss)  
+                current_epoch_losses["train_miou"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, accuracy))
+                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
     
     def run_validation_epoch(self, current_epoch_losses):
-        with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_train:  # create a progress bar for training
-            for idx, (x, y) in enumerate(self.train_data):  # get data batches
-                loss, accuracy = self.run_train_iter(x=x, y=y)  # take a training iter step
-                current_epoch_losses["train_loss"].append(loss)  # add current iter loss to the train loss list
-                current_epoch_losses["train_acc"].append(accuracy)  # add current iter acc to the train acc list
+        with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_train:  
+            for idx, (x, y) in enumerate(self.train_data): 
+                loss, accuracy = self.run_train_iter(x=x, y=y)  
+                current_epoch_losses["train_loss"].append(loss) 
+                current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, accuracy: {:.4f}".format(loss, accuracy))
+                pbar_train.set_description("loss: {:.4f}, accuracy: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
 
@@ -172,3 +169,53 @@ class ExperimentBuilder(nn.Module):
         return state['best_val_model_idx'], state['best_val_model_acc'], state
     
     def run_experiment(self):
+        total_losses = {"train_acc": [], "train_loss": [], "val_acc": [],
+                        "val_loss": [], "curr_epoch": []}  
+        for i, epoch_idx in enumerate(range(self.starting_epoch, self.num_epochs)):
+            epoch_start_time = time.time()
+            current_epoch_losses = {"train_acc": [], "train_loss": [], "val_acc": [], "val_loss": []}
+
+            current_epoch_losses = self.run_training_epoch(current_epoch_losses)
+            current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
+
+            val_mean_accuracy = np.mean(current_epoch_losses['val_acc'])
+            if val_mean_accuracy > self.best_val_model_acc:  
+                self.best_val_model_acc = val_mean_accuracy  
+                self.best_val_model_idx = epoch_idx  
+
+            for key, value in current_epoch_losses.items():
+                total_losses[key].append(np.mean(value))
+
+            total_losses['curr_epoch'].append(epoch_idx)
+            save_statistics(experiment_log_dir=self.experiment_logs, filename='summary.csv',
+                            stats_dict=total_losses, current_epoch=i,
+                            continue_from_mode=True if (self.starting_epoch != 0 or i > 0) else False) 
+
+
+            out_string = "_".join(
+                ["{}_{:.4f}".format(key, np.mean(value)) for key, value in current_epoch_losses.items()])
+            epoch_elapsed_time = time.time() - epoch_start_time  
+            epoch_elapsed_time = "{:.4f}".format(epoch_elapsed_time)
+            print("Epoch {}:".format(epoch_idx), out_string, "epoch time", epoch_elapsed_time, "seconds")
+            self.state['current_epoch_idx'] = epoch_idx
+            self.state['best_val_model_acc'] = self.best_val_model_acc
+            self.state['best_val_model_idx'] = self.best_val_model_idx
+            self.save_model(model_save_dir=self.experiment_saved_models,
+                            model_save_name="train_model", model_idx=epoch_idx, state=self.state)
+            self.save_model(model_save_dir=self.experiment_saved_models,
+                            model_save_name="train_model", model_idx='latest', state=self.state)
+
+        print("Generating test set evaluation metrics")
+        self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
+                        model_save_name="train_model")
+        current_epoch_losses = {"test_acc": [], "test_loss": []}  
+
+        current_epoch_losses = self.run_testing_epoch(current_epoch_losses=current_epoch_losses)
+
+        test_losses = {key: [np.mean(value)] for key, value in
+                       current_epoch_losses.items()}  
+
+        save_statistics(experiment_log_dir=self.experiment_logs, filename='test_summary.csv',
+                        stats_dict=test_losses, current_epoch=0, continue_from_mode=False)
+
+        return total_losses, test_losses 
