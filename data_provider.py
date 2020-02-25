@@ -74,7 +74,7 @@ if __name__ == '__main__':
     voc_train = VOCSegmentation(root='./data',train=True,transform=transform_train)
 
     dataloader = DataLoader(voc_train, batch_size=3, shuffle=True, num_workers=0)
-    
+    print(len(dataloader)) 
     for (img, tag) in dataloader:
         image = img[0]
         target = tag[0]

@@ -48,7 +48,7 @@ class ExperimentBuilder(nn.Module):
                     {'params': model.get_classifier_params(), 'lr': self.learn_rate * 10}]
     self.optimizer = torch.optim.SGD(train_params, momentum=self.mementum, weight_decay=self.weight_decay)
     self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
-    self.scheduler = PolyLR(self.optimizer, max_iters=self.num_epochs, power=0.9)
+    self.scheduler = PolyLR(self.optimizer, max_iters=self.num_epochs*len(self.train_data), power=0.9)
     self.evaluator = Evaluator(self.num_class)
  
     total_num_params = 0
@@ -107,10 +107,11 @@ class ExperimentBuilder(nn.Module):
         self.scheduler.step()
 
         predicted = output.data.cpu().numpy()
+        target = target.cpu().numpy()
         predicted = np.argmax(predicted, axis=1)
 
         self.evaluator.add_batch(target, predicted)
-        miou = self.edvaluator.Mean_Intersection_over_Union()
+        miou = self.evaluator.Mean_Intersection_over_Union()
         return loss.data.detach().cpu().numpy(), miou
     
     def run_evaluation_iter(self, image, target):
@@ -123,15 +124,13 @@ class ExperimentBuilder(nn.Module):
         self.optimizer.zero_grad()
         output = self.model.forward(image)
         loss = self.criterion(output, target)
-        loss.backward()
-        self.optimizer.step()
-        self.scheduler.step()
 
         predicted = output.data.cpu().numpy()
+        target = target.cpu().numpy()
         predicted = np.argmax(predicted, axis=1)
 
         self.evaluator.add_batch(target, predicted)
-        miou = self.edvaluator.Mean_Intersection_over_Union()
+        miou = self.evaluator.Mean_Intersection_over_Union()
         return loss.data.detach().cpu().numpy(), miou
     
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
@@ -191,7 +190,6 @@ class ExperimentBuilder(nn.Module):
                             stats_dict=total_losses, current_epoch=i,
                             continue_from_mode=True if (self.starting_epoch != 0 or i > 0) else False) 
 
-
             out_string = "_".join(
                 ["{}_{:.4f}".format(key, np.mean(value)) for key, value in current_epoch_losses.items()])
             epoch_elapsed_time = time.time() - epoch_start_time  
@@ -204,7 +202,7 @@ class ExperimentBuilder(nn.Module):
                             model_save_name="train_model", model_idx=epoch_idx, state=self.state)
             self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx='latest', state=self.state)
-
+        
         print("Generating test set evaluation metrics")
         self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
                         model_save_name="train_model")
