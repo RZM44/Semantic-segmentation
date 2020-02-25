@@ -24,16 +24,16 @@ def get_args():
     parser.add_argument('--continue_from_epoch', nargs="?", type=int, default=-1, help='continue option for experiment')
     parser.add_argument('--seed', nargs="?", type=int, default=7112018,
                         help='Seed to use for random number generator for experiment')
-    parser.add_argument('--learn_rate', nargs="?", type=int, default=0.007, help='base learning rate') 
+    parser.add_argument('--learn_rate', nargs="?", type=float, default=0.007, help='base learning rate') 
     parser.add_argument('--num_epochs', nargs="?", type=int, default=100, help='The experiment\'s epoch budget')
     parser.add_argument('--experiment_name', nargs="?", type=str, default="exp_1",
                         help='Experiment name - to be used for building the experiment folder')
     parser.add_argument('--use_gpu', nargs="?", type=str2bool, default=False,
                         help='A flag indicating whether we will use GPU acceleration or not')
-    parser.add_argument('--mementum', narg="?", type=float, default=0.9, help='mementum factor for SGD')
-    parser.add_argument('--weight_decay_coefficient', nargs="?", type=float, default=5e-4,
+    parser.add_argument('--mementum', nargs="?", type=float, default=0.9, help='mementum factor for SGD')
+    parser.add_argument('--weight_decay', nargs="?", type=float, default=5e-4,
                         help='Weight decay to use for mementum')
-    parser.add_argument('--output_stride', nargs="?", type=Int, default=16,
+    parser.add_argument('--output_stride', nargs="?", type=int, default=16,
                         help='The output_stride for the network')
 
     args = parser.parse_args()

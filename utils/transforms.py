@@ -110,7 +110,7 @@ class RandomCrop(object):
 class FixScale(object):
     """ Fixscale the given PIL Image 
     """
-    def __init__(self, scale_range):
+    def __init__(self, scale_target_size):
         self.target_size = scale_target_size
 
     def __call__(self, image, target):
@@ -126,6 +126,6 @@ class CenterCrop(object):
              self.size = (size, size)
 
     def __call__(self, image, target):
-        return F.center_crop(image,self,size), F.center_crop(target, self.size)
+        return F.center_crop(image, self.size), F.center_crop(target, self.size)
 
 

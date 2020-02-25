@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from aspp import build_aspp
-from decoder import build_decoder
-from resnet import build_resnet
+from model.aspp import build_aspp
+from model.decoder import build_decoder
+from model.resnet import build_resnet
 
 class DeepLab(nn.Module):
     def __init__(self, output_stride=16, num_classes=21):

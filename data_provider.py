@@ -71,9 +71,18 @@ if __name__ == '__main__':
           transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           ])
     """
-    voc_train = VOCSegmentation(root='./data',train=True,transform=transform_train)
+    transform_val = trans.Compose([
+          trans.FixScale(513),
+          trans.CenterCrop(513),
+          trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+          trans.ToTensor(),
+          ])
 
-    dataloader = DataLoader(voc_train, batch_size=3, shuffle=True, num_workers=0)
+    #voc_train = VOCSegmentation(root='./data',train=True,transform=transform_train)
+
+    voc_val = VOCSegmentation(root='./data',train=False,transform=transform_val)
+    #dataloader = DataLoader(voc_train, batch_size=3, shuffle=True, num_workers=0)
+    dataloader = DataLoader(voc_val, batch_size=3, shuffle=True, num_workers=0)
     print(len(dataloader)) 
     for (img, tag) in dataloader:
         image = img[0]
