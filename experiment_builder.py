@@ -101,7 +101,7 @@ class ExperimentBuilder(nn.Module):
         
         self.optimizer.zero_grad()
         output = self.model.forward(image)
-        loss = self.criterion(output, target)
+        loss = self.criterion(output, target.long())
         loss.backward()
         self.optimizer.step()
         self.scheduler.step()
@@ -123,7 +123,7 @@ class ExperimentBuilder(nn.Module):
         
         self.optimizer.zero_grad()
         output = self.model.forward(image)
-        loss = self.criterion(output, target)
+        loss = self.criterion(output, target.long())
 
         predicted = output.data.cpu().numpy()
         target = target.cpu().numpy()
@@ -144,7 +144,7 @@ class ExperimentBuilder(nn.Module):
             for idx, (image, target) in enumerate(self.train_data): 
                 loss, miou = self.run_train_iter(image, target)  
                 current_epoch_losses["train_loss"].append(loss)  
-                current_epoch_losses["train_miou"].append(miou)  
+                current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
                 pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
@@ -157,7 +157,7 @@ class ExperimentBuilder(nn.Module):
                 current_epoch_losses["train_loss"].append(loss) 
                 current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, accuracy: {:.4f}".format(loss, miou))
+                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
 
