@@ -4,6 +4,9 @@ import numpy as np
 from PIL import Image
 import torch.utils.data as data
 class VOCSegmentation(data.Dataset):
+    """Dataset class for PASCAL VOC 2012
+       totally 21 classes(including backgroud)
+    """
     CLASSES = [
         'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
        'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',

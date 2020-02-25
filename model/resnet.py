@@ -1,10 +1,10 @@
 import math
+import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 
 class Bottleneck(nn.Module):
     expansion = 4
-
 
     def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None):
         super(Bottleneck, self).__init__()
@@ -63,10 +63,10 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], dilation=dilation[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=strides[1], dilation=dilation[1])
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilation[2])
-        self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilation[3])
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], dilation=dilations[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=strides[1], dilation=dilations[1])
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilations[2])
+        self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilations[3])
 
         self._init_weight()
 
@@ -140,9 +140,9 @@ class ResNet(nn.Module):
         state_dict.update(model_dict)
         self.load_state_dict(state_dict)
 
-def ResNet101(output_stride=16, pretrained=True):
-    model = ResNet(3, Bottleneck, [3, 4, 23, 3], output_stride, pretrained=pretrained)
+def ResNet101(output_stride=16, pretrained=False):
+    model = ResNet(Bottleneck, [3, 4, 23, 3], output_stride, pretrained)
     return model 
 
-def build_resnet(output_stride, pretrained)
+def build_resnet(output_stride, pretrained):
     return ResNet101(output_stride, pretrained)

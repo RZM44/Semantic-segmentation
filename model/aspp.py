@@ -3,9 +3,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class ASPP_module(nn.Module):
+class ASPP_Module(nn.Module):
     def __init__(self, inplanes, planes, dilation):
-        super(ASPP_module, self).__init__()
+        super(ASPP_Module, self).__init__()
         if dilation == 1:
             kernel_size = 1
             padding = 0
@@ -34,7 +34,7 @@ class ASPP_module(nn.Module):
                 m.bias.data.zero_()
 
 class ASPP(nn.Module):
-    def __init__(self, inplanes=2048, output_stride):
+    def __init__(self, output_stride, inplanes=2048):
         super(ASPP, self).__init__()
         if output_stride == 16:
             dilations = [1, 6, 12, 18]

@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from model.aspp import build_aspp
-from model.decoder import build_decoder
-from model.resnet import build_resnet
+from aspp import build_aspp
+from decoder import build_decoder
+from resnet import build_resnet
 
 class DeepLab(nn.Module):
     def __init__(self, output_stride=16, num_classes=21):
@@ -39,4 +39,9 @@ class DeepLab(nn.Module):
                     for p in m[1].parameters():
                         if p.requires_grad:
                             yield p
-
+if __name__ == "__main__":
+    model = DeepLab(output_stride=16)
+    model.eval()
+    input = torch.rand(1, 3, 513, 513)
+    output = model(input)
+    print(output.size())
