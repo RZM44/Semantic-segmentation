@@ -44,11 +44,11 @@ class ExperimentBuilder(nn.Module):
     self.test_data = test_data 
     self.num_epochs = num_epochs
 
-    train_params = [{'params': model.get_backbone.parameters(), 'lr': self.learn_rate},
-                    {'params': model.get_classifier_parameters(), 'lr': self.learn_rate * 10}]
+    train_params = [{'params': model.get_backbone_params(), 'lr': self.learn_rate},
+                    {'params': model.get_classifier_params(), 'lr': self.learn_rate * 10}]
     self.optimizer = torch.optim.SGD(train_params, momentum=self.mementum, weight_decay=self.weight_decay)
     self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
-    self.scheduler = PolyLR(self.optimizer, max_iters= self.num_epochs, power=0.9)
+    self.scheduler = PolyLR(self.optimizer, max_iters=self.num_epochs, power=0.9)
     self.evaluator = Evaluator(self.num_class)
  
     total_num_params = 0
