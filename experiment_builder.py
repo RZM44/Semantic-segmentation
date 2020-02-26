@@ -178,6 +178,17 @@ class ExperimentBuilder(nn.Module):
                 pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
 
         return current_epoch_losses
+    
+    def run_testing_epoch(self, current_epoch_losses):
+        with tqdm.tqdm(total=len(self.test_data), file=sys.stdout) as pbar_test:  
+            for idx, (image, target) in enumerate(self.test_data): 
+                loss, miou = self.run_validation_iter(image, target)  
+                current_epoch_losses["test_loss"].append(loss) 
+                current_epoch_losses["test_acc"].append(miou)  
+                pbar_test.update(1)
+                pbar_test.set_description("Validating: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+
+        return current_epoch_losses
 
     def load_model(self, model_save_dir, model_save_name, model_idx):
         
