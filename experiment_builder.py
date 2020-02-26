@@ -25,6 +25,9 @@ class ExperimentBuilder(nn.Module):
         self.mementum = mementum
         self.weight_decay = weight_decay
 
+        if(self.experiment_name == "test"):
+            print('Testmode')
+        
         if torch.cuda.device_count() > 1 and use_gpu:
             self.device = torch.cuda.current_device()
             self.model.to(self.device)
@@ -137,24 +140,34 @@ class ExperimentBuilder(nn.Module):
         torch.save(state, f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(model_idx))))
 
     def run_training_epoch(self, current_epoch_losses):
+        torch.cuda.reset_max_memory_cached(0)
+        torch.cuda.reset_max_memory_allocated(0)
         with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  
             for idx, (image, target) in enumerate(self.train_data): 
                 loss, miou = self.run_train_iter(image, target)  
+                m = torch.cuda.get_device_properties(0).total_memory/1e9
+                c = torch.cuda.max_memory_cached(0)/1e9
+                a = torch.cuda.max_memory_allocated(0)/1e9
                 current_epoch_losses["train_loss"].append(loss)  
                 current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}, m: {:.4f}GB, c:{:4f}GB, a:{:4f}GB".format(loss, miou, m, c, a))
 
         return current_epoch_losses
     
     def run_validation_epoch(self, current_epoch_losses):
+        torch.cuda.reset_max_memory_cached(0)
+        torch.cuda.reset_max_memory_allocated(0)
         with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_val:  
             for idx, (image, target) in enumerate(self.val_data): 
                 loss, miou = self.run_evaluation_iter(image, target)  
+                m = torch.cuda.get_device_properties(0).total_memory/1e9
+                c = torch.cuda.max_memory_cached(0)/1e9
+                a = torch.cuda.max_memory_allocated(0)/1e9
                 current_epoch_losses["val_loss"].append(loss) 
                 current_epoch_losses["val_acc"].append(miou)  
                 pbar_val.update(1)
-                pbar_val.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                pbar_val.set_description("loss: {:.4f}, miou: {:.4f}, m: {:.4f}GB, c:{:4f}GB, a:{:4f}GB".format(loss, miou, m, c, a))
 
         return current_epoch_losses
 
@@ -195,22 +208,25 @@ class ExperimentBuilder(nn.Module):
             self.state['current_epoch_idx'] = epoch_idx
             self.state['best_val_model_acc'] = self.best_val_model_acc
             self.state['best_val_model_idx'] = self.best_val_model_idx
-            self.save_model(model_save_dir=self.experiment_saved_models,
+            if(self.experiment_name != "test"):
+                self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx=epoch_idx, state=self.state)
-            self.save_model(model_save_dir=self.experiment_saved_models,
+                self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx='latest', state=self.state)
-        
-        print("Generating test set evaluation metrics")
-        self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
-                        model_save_name="train_model")
-        current_epoch_losses = {"test_acc": [], "test_loss": []}  
+            
+        if(self.experiment_name != "test"):
+            print("Generating test set evaluation metrics")
+            self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
+                            model_save_name="train_model")
+            current_epoch_losses = {"test_acc": [], "test_loss": []}  
 
-        current_epoch_losses = self.run_testing_epoch(current_epoch_losses=current_epoch_losses)
+            current_epoch_losses = self.run_testing_epoch(current_epoch_losses=current_epoch_losses)
 
-        test_losses = {key: [np.mean(value)] for key, value in
+            test_losses = {key: [np.mean(value)] for key, value in
                        current_epoch_losses.items()}  
 
-        save_statistics(experiment_log_dir=self.experiment_logs, filename='test_summary.csv',
+            save_statistics(experiment_log_dir=self.experiment_logs, filename='test_summary.csv',
                         stats_dict=test_losses, current_epoch=0, continue_from_mode=False)
-
+        else:
+            test_losses = 0
         return total_losses, test_losses 
