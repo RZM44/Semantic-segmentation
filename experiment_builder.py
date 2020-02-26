@@ -50,7 +50,7 @@ class ExperimentBuilder(nn.Module):
                         {'params': network_model.get_classifier_params(), 'lr': self.learn_rate * 10}]
         self.optimizer = torch.optim.SGD(train_params, momentum=self.mementum, weight_decay=self.weight_decay)
         self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
-        self.scheduler = PolyLR(self.optimizer, base_lr=self.learn_rate, max_iters=self.num_epochs*len(self.train_data), power=0.9)
+        self.scheduler = PolyLR(self.optimizer, max_iters=self.num_epochs*len(self.train_data), power=0.9)
         self.evaluator = Evaluator(self.num_class)
      
         total_num_params = 0
