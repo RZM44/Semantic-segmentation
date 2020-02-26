@@ -13,14 +13,14 @@ torch.manual_seed(seed=args.seed)
 
 transform_train = trans.Compose([
           trans.RandomScale((0.5,2.0)),
-          trans.RandomCrop(513),
+          trans.RandomCrop(args.crop_size),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
 
 transform_val = trans.Compose([
-          trans.FixScale(513),
-          trans.CenterCrop(513),
+          trans.FixScale(args.crop_size),
+          trans.CenterCrop(args.crop_size),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])

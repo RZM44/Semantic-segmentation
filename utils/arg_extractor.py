@@ -17,10 +17,11 @@ def get_args():
     :return: A namedtuple with arguments
     """
     parser = argparse.ArgumentParser(
-        description='Welcome to the MLP course\'s Pytorch training and inference helper script')
+        description='settings for the semantic segmentation')
 
     parser.add_argument('--batch_size', nargs="?", type=int, default=16, help='Batch_size for experiment')
     parser.add_argument('--num_class', nargs="?", type=int, default=21, help='Number of classes in dataset')
+    parser.add_argument('--crop_size', nargs="?", type=int, default=513, help='crop_size for image')
     parser.add_argument('--continue_from_epoch', nargs="?", type=int, default=-1, help='continue option for experiment')
     parser.add_argument('--seed', nargs="?", type=int, default=7112018,
                         help='Seed to use for random number generator for experiment')

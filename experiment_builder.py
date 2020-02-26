@@ -57,6 +57,12 @@ class ExperimentBuilder(nn.Module):
         for param in network_model.parameters():
             total_num_params += np.prod(param.shape)
         print('System learnable parameters', total_num_params)
+        num_conv_layers = 0
+        for name, value in self.named_parameters():
+            if all(item in name for item in ['conv', 'weight']):
+                num_conv_layers += 1
+        print('number of conv layers', num_conv_layers)
+        
 
         self.experiment_folder = os.path.abspath(experiment_name)
         self.experiment_logs = os.path.abspath(os.path.join(self.experiment_folder, "result_outputs"))
@@ -80,6 +86,7 @@ class ExperimentBuilder(nn.Module):
                     model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                     model_idx='latest')  
                 self.starting_epoch = self.state['current_epoch_idx']
+                print("restart from epoch ",self.starting_epoch)
             except:
                 print("Model objects cannot be found, initializing a new model and starting from scratch")
                 self.starting_epoch = 0
@@ -90,6 +97,7 @@ class ExperimentBuilder(nn.Module):
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                 model_idx=continue_from_epoch)  
             self.starting_epoch = self.state['current_epoch_idx']
+            print("restart from epoch ",self.starting_epoch)
         else:
             self.starting_epoch = 0
             self.state = dict()
@@ -151,7 +159,7 @@ class ExperimentBuilder(nn.Module):
                 current_epoch_losses["train_loss"].append(loss)  
                 current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}, m: {:.4f}GB, c:{:4f}GB, a:{:4f}GB".format(loss, miou, m, c, a))
+                pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
 
         return current_epoch_losses
     
@@ -167,7 +175,7 @@ class ExperimentBuilder(nn.Module):
                 current_epoch_losses["val_loss"].append(loss) 
                 current_epoch_losses["val_acc"].append(miou)  
                 pbar_val.update(1)
-                pbar_val.set_description("loss: {:.4f}, miou: {:.4f}, m: {:.4f}GB, c:{:4f}GB, a:{:4f}GB".format(loss, miou, m, c, a))
+                pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
 
         return current_epoch_losses
 

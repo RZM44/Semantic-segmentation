@@ -40,8 +40,11 @@ class DeepLab(nn.Module):
                         if p.requires_grad:
                             yield p
 if __name__ == "__main__":
+   # from aspp import build_aspp
+   # from decoder import build_decoder
+   # from resnet import build_resnet
     model = DeepLab(output_stride=16)
     model.eval()
-    input = torch.rand(1, 3, 513, 513)
+    input = torch.rand(1, 3, 213, 213)
     output = model(input)
     print(output.size())
