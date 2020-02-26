@@ -26,9 +26,9 @@ transform_val = trans.Compose([
           ])
 voc_train = VOCSegmentation(root='./data', train=True, transform=transform_train)
 voc_val = VOCSegmentation(root='./data', train=False, transform=transform_val)
-train_data = torch.utils.data.DataLoader(voc_train, batch_size=args.batch_size, shuffle=True, num_workers=4)
-val_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
-test_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4)
+train_data = torch.utils.data.DataLoader(voc_train, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
+val_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4, drop_last=True)
+test_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4, drop_last=True)
 
 
 custom_net = DeepLab(args.output_stride)

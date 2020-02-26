@@ -24,7 +24,6 @@ class ExperimentBuilder(nn.Module):
         self.learn_rate = learn_rate
         self.mementum = mementum
         self.weight_decay = weight_decay
-        #self.device = torch.cuda.current_device()
 
         if torch.cuda.device_count() > 1 and use_gpu:
             self.device = torch.cuda.current_device()
@@ -52,9 +51,9 @@ class ExperimentBuilder(nn.Module):
         self.evaluator = Evaluator(self.num_class)
      
         total_num_params = 0
-        for param in self.parameters():
+        for param in network_model.parameters():
             total_num_params += np.prod(param.shape)
-        print('System learnable parameters')
+        print('System learnable parameters', total_num_params)
 
         self.experiment_folder = os.path.abspath(experiment_name)
         self.experiment_logs = os.path.abspath(os.path.join(self.experiment_folder, "result_outputs"))
@@ -121,7 +120,6 @@ class ExperimentBuilder(nn.Module):
         image = image.to(self.device)
         target = target.to(self.device)
         
-        self.optimizer.zero_grad()
         output = self.model.forward(image)
         loss = self.criterion(output, target.long())
 
@@ -136,8 +134,7 @@ class ExperimentBuilder(nn.Module):
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
         
         state['network'] = self.state_dict()
-        torch.save(state, f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(
-                    model_idx))))
+        torch.save(state, f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(model_idx))))
 
     def run_training_epoch(self, current_epoch_losses):
         with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  
@@ -151,13 +148,13 @@ class ExperimentBuilder(nn.Module):
         return current_epoch_losses
     
     def run_validation_epoch(self, current_epoch_losses):
-        with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_train:  
-            for idx, (x, y) in enumerate(self.train_data): 
-                loss, accuracy = self.run_train_iter(x=x, y=y)  
-                current_epoch_losses["train_loss"].append(loss) 
-                current_epoch_losses["train_acc"].append(miou)  
-                pbar_train.update(1)
-                pbar_train.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+        with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_val:  
+            for idx, (image, target) in enumerate(self.val_data): 
+                loss, miou = self.run_evaluation_iter(image, target)  
+                current_epoch_losses["val_loss"].append(loss) 
+                current_epoch_losses["val_acc"].append(miou)  
+                pbar_val.update(1)
+                pbar_val.set_description("loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
 
