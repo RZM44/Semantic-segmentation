@@ -33,6 +33,7 @@ class ExperimentBuilder(nn.Module):
             self.model.to(self.device)
             self.model = nn.DataParallel(module=self.model)
             print('Use Mutil GPU', self.device)
+            print('GPU number', torch.cuda.device_count())
         elif torch.cuda.device_count() == 1 and use_gpu:
             self.device = torch.cuda.current_device()
             self.model.to(self.device)  
@@ -49,7 +50,8 @@ class ExperimentBuilder(nn.Module):
         train_params = [{'params': network_model.get_backbone_params(), 'lr': self.learn_rate},
                         {'params': network_model.get_classifier_params(), 'lr': self.learn_rate * 10}]
         self.optimizer = torch.optim.SGD(train_params, momentum=self.mementum, weight_decay=self.weight_decay)
-        self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
+        #self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
+        self.criterion = CrossEntropyLoss(size_average=True, ignore_index=255).to(self.device)
         self.scheduler = PolyLR(self.optimizer, max_iters=self.num_epochs*len(self.train_data), power=0.9)
         self.evaluator = Evaluator(self.num_class)
      

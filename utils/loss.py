@@ -26,8 +26,24 @@ class CrossEntropyLoss(nn.Module):
         self.ignore_index = ignore_index
 
     def forward(self, inputs, targets):
-        ce_loss = F.cross_entropy(inputs,targets, redution='none', ignore_index=self.ignore_index)
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none', ignore_index=self.ignore_index)
         if self.size_average:
             return ce_loss.mean()
         else:
             return ce_loss.sum()
+
+if __name__ == '__main__':
+    torch.manual_seed(123)
+    inputs = torch.rand(2, 21, 213, 213)
+    averageloss = CrossEntropyLoss(size_average=True)
+    sumloss = CrossEntropyLoss(size_average=False)
+    target = torch.rand(2, 213, 213)
+    averageout = averageloss(inputs, target.long())
+    sumout = sumloss(inputs, target.long())
+    out = F.cross_entropy(inputs, target.long(), reduction='sum')
+    print(out.size())
+    print(out)
+    print(sumout)
+    print(averageout)
+    
+
