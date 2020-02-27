@@ -9,7 +9,7 @@ import numpy as np
 import time
 
 from utils.storage import save_statistics
-from utils.loss import FocalLoss
+from utils.loss import FocalLoss, CrossEntropyLoss
 from utils.scheduler import PolyLR
 from utils.metrics import Evaluator
 
@@ -150,34 +150,31 @@ class ExperimentBuilder(nn.Module):
         torch.save(state, f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(model_idx))))
 
     def run_training_epoch(self, current_epoch_losses):
-        torch.cuda.reset_max_memory_cached(0)
-        torch.cuda.reset_max_memory_allocated(0)
         with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  
             for idx, (image, target) in enumerate(self.train_data): 
                 loss, miou = self.run_train_iter(image, target)  
-                m = torch.cuda.get_device_properties(0).total_memory/1e9
-                c = torch.cuda.max_memory_cached(0)/1e9
-                a = torch.cuda.max_memory_allocated(0)/1e9
                 current_epoch_losses["train_loss"].append(loss)  
                 current_epoch_losses["train_acc"].append(miou)  
                 pbar_train.update(1)
-                pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
+                if(torch.cuda.device_count() >= 1):
+                    m = torch.cuda.get_device_properties(0).total_memory/1e9
+                    c = torch.cuda.max_memory_cached(0)/1e9
+                    a = torch.cuda.max_memory_allocated(0)/1e9
+                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
+                else:
+                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                    
 
         return current_epoch_losses
     
     def run_validation_epoch(self, current_epoch_losses):
-        torch.cuda.reset_max_memory_cached(0)
-        torch.cuda.reset_max_memory_allocated(0)
         with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_val:  
             for idx, (image, target) in enumerate(self.val_data): 
                 loss, miou = self.run_evaluation_iter(image, target)  
-                m = torch.cuda.get_device_properties(0).total_memory/1e9
-                c = torch.cuda.max_memory_cached(0)/1e9
-                a = torch.cuda.max_memory_allocated(0)/1e9
                 current_epoch_losses["val_loss"].append(loss) 
                 current_epoch_losses["val_acc"].append(miou)  
                 pbar_val.update(1)
-                pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
+                pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
     
