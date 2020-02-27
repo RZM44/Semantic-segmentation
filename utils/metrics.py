@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 
 class Evaluator(object):
     def __init__(self, num_class):
@@ -11,25 +11,20 @@ class Evaluator(object):
         return Acc
 
     def Pixel_Accuracy_Class(self):
-        Acc = np.diag(self.confusion_matrix) / self.confusion_matrix.sum(axis=1)
+        with np.errstate(invalid='ignore'):
+            Acc = np.diag(self.confusion_matrix) / self.confusion_matrix.sum(axis=1)
         Acc = np.nanmean(Acc)
         return Acc
 
     def Mean_Intersection_over_Union(self):
-        MIoU = np.diag(self.confusion_matrix) / (
-                    np.sum(self.confusion_matrix, axis=1) + np.sum(self.confusion_matrix, axis=0) -
-                    np.diag(self.confusion_matrix))
-        MIoU = np.nanmean(MIoU)
+        intersection = np.diag(self.confusion_matrix)
+        gt_set = np.sum(self.confusion_matrix, axis=1)
+        pre_set = np.sum(self.confusion_matrix, axis=0)
+        union = gt_set + pre_set - intersection
+        with np.errstate(invalid='ignore'):
+            iou = intersection / union
+        MIoU = np.nanmean(iou)
         return MIoU
-
-    def Frequency_Weighted_Intersection_over_Union(self):
-        freq = np.sum(self.confusion_matrix, axis=1) / np.sum(self.confusion_matrix)
-        iu = np.diag(self.confusion_matrix) / (
-                    np.sum(self.confusion_matrix, axis=1) + np.sum(self.confusion_matrix, axis=0) -
-                    np.diag(self.confusion_matrix))
-
-        FWIoU = (freq[freq > 0] * iu[freq > 0]).sum()
-        return FWIoU
 
     def _generate_matrix(self, gt_image, pre_image):
         mask = (gt_image >= 0) & (gt_image < self.num_class)
@@ -44,4 +39,24 @@ class Evaluator(object):
 
     def reset(self):
         self.confusion_matrix = np.zeros((self.num_class,) * 2)
+
+if __name__ == '__main__':
+    import torch
+    size = 4
+    x = torch.zeros([size, size], dtype=torch.int)
+    x[:, 0] = 5 
+    print("Predict:\n", x)
+    eval = Evaluator(6)
+    y = torch.zeros([size, size], dtype=torch.int64)
+    y[:, 0] = 5
+    y[0, :] = 5
+    print("Target\n", y)
+    eval.add_batch(y.numpy(), x.numpy())
+    print(eval.confusion_matrix)
+    Acc = eval.Pixel_Accuracy_Class()
+    Miou = eval.Mean_Intersection_over_Union()
+    print("Acc: {}, MIOU: {}".format(Acc, Miou))
+    eval.reset()
+    print(eval.confusion_matrix)
+
 
