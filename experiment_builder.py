@@ -87,7 +87,7 @@ class ExperimentBuilder(nn.Module):
                 self.best_val_model_idx, self.best_val_model_acc, self.state = self.load_model(
                     model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                     model_idx='latest')  
-                self.starting_epoch = self.state['current_epoch_idx']
+                self.starting_epoch = self.state['current_epoch_idx'] + 1
                 print("restart from epoch ",self.starting_epoch)
             except:
                 print("Model objects cannot be found, initializing a new model and starting from scratch")
@@ -98,7 +98,7 @@ class ExperimentBuilder(nn.Module):
             self.best_val_model_idx, self.best_val_model_acc, self.state = self.load_model(
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                 model_idx=continue_from_epoch)  
-            self.starting_epoch = self.state['current_epoch_idx']
+            self.starting_epoch = self.state['current_epoch_idx'] + 1
             print("restart from epoch ",self.starting_epoch)
         else:
             self.starting_epoch = 0
