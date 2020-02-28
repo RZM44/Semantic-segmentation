@@ -88,6 +88,8 @@ class ExperimentBuilder(nn.Module):
                     model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                     model_idx='latest')  
                 self.starting_epoch = self.state['current_epoch_idx'] + 1
+                self.scheduler.step()
+                self.scheduler.last_epoch = self.state['last_epoch']
                 print("restart from epoch ",self.state['current_epoch_idx'])
                 print("backbone learning rate: ", self.optimizer.param_groups[0]['lr'])
                 print("classifier learning rate: ", self.optimizer.param_groups[1]['lr'])
@@ -104,6 +106,8 @@ class ExperimentBuilder(nn.Module):
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                 model_idx=continue_from_epoch)  
             self.starting_epoch = self.state['current_epoch_idx'] + 1
+            self.scheduler.step()
+            self.scheduler.last_epoch = self.state['last_epoch']
             print("restart from epoch ",self.state['current_epoch_idx'])
             print("backbone learning rate: ", self.optimizer.param_groups[0]['lr'])
             print("classifier learning rate: ", self.optimizer.param_groups[1]['lr'])
@@ -218,7 +222,7 @@ class ExperimentBuilder(nn.Module):
             current_epoch_losses = {"train_acc": [], "train_loss": [], "val_acc": [], "val_loss": []}
 
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
-            print(self.optimizer.param_groups[0]['lr'])
+            #print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
 
             val_mean_accuracy = np.mean(current_epoch_losses['val_acc'])
