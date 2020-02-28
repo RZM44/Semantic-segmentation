@@ -218,7 +218,7 @@ class ExperimentBuilder(nn.Module):
             current_epoch_losses = {"train_acc": [], "train_loss": [], "val_acc": [], "val_loss": []}
 
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
-            print(self.optimizer.param_groups[0]['lr'])
+            #print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
 
             val_mean_accuracy = np.mean(current_epoch_losses['val_acc'])
