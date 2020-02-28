@@ -88,7 +88,12 @@ class ExperimentBuilder(nn.Module):
                     model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                     model_idx='latest')  
                 self.starting_epoch = self.state['current_epoch_idx'] + 1
-                print("restart from epoch ",self.starting_epoch)
+                print("restart from epoch ",self.state['current_epoch_idx'])
+                print("backbone learning rate: ", self.optimizer.param_groups[0]['lr'])
+                print("classifier learning rate: ", self.optimizer.param_groups[1]['lr'])
+                print("iterations: ", self.scheduler.last_epoch)
+                print("base_lr:", self.scheduler.base_lrs)
+                
             except:
                 print("Model objects cannot be found, initializing a new model and starting from scratch")
                 self.starting_epoch = 0
@@ -99,7 +104,11 @@ class ExperimentBuilder(nn.Module):
                 model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                 model_idx=continue_from_epoch)  
             self.starting_epoch = self.state['current_epoch_idx'] + 1
-            print("restart from epoch ",self.starting_epoch)
+            print("restart from epoch ",self.state['current_epoch_idx'])
+            print("backbone learning rate: ", self.optimizer.param_groups[0]['lr'])
+            print("classifier learning rate: ", self.optimizer.param_groups[1]['lr'])
+            print("iterations: ", self.scheduler.last_epoch)
+            print("base_lr:", self.scheduler.base_lrs)
         else:
             self.starting_epoch = 0
             self.state = dict()
@@ -146,7 +155,10 @@ class ExperimentBuilder(nn.Module):
     
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
         
-        state['network'] = self.state_dict()
+        state['network'] = self.model.state_dict()
+        state['optimizer'] = self.optimizer.state_dict()
+        #state['scheduler'] = self.scheduler.state_dict()
+        state['last_epoch'] = self.scheduler.last_epoch
         torch.save(state, f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(model_idx))))
 
     def run_training_epoch(self, current_epoch_losses):
@@ -181,18 +193,21 @@ class ExperimentBuilder(nn.Module):
     def run_testing_epoch(self, current_epoch_losses):
         with tqdm.tqdm(total=len(self.test_data), file=sys.stdout) as pbar_test:  
             for idx, (image, target) in enumerate(self.test_data): 
-                loss, miou = self.run_validation_iter(image, target)  
+                loss, miou = self.run_evaluation_iter(image, target)  
                 current_epoch_losses["test_loss"].append(loss) 
                 current_epoch_losses["test_acc"].append(miou)  
                 pbar_test.update(1)
-                pbar_test.set_description("Validating: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                pbar_test.set_description("Testing: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
 
         return current_epoch_losses
 
     def load_model(self, model_save_dir, model_save_name, model_idx):
         
         state = torch.load(f=os.path.join(model_save_dir, "{}_{}".format(model_save_name, str(model_idx))))
-        self.load_state_dict(state_dict=state['network'])
+        self.model.load_state_dict(state_dict=state['network'])
+        self.optimizer.load_state_dict(state_dict=state['optimizer'])
+        #self.scheduler.load_state_dict(state_dict=state['scheduler'])
+        self.scheduler.last_epoch = state['last_epoch']
         return state['best_val_model_idx'], state['best_val_model_acc'], state
     
     def run_experiment(self):
@@ -203,6 +218,7 @@ class ExperimentBuilder(nn.Module):
             current_epoch_losses = {"train_acc": [], "train_loss": [], "val_acc": [], "val_loss": []}
 
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
+            print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
 
             val_mean_accuracy = np.mean(current_epoch_losses['val_acc'])

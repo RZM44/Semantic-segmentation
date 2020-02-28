@@ -14,22 +14,24 @@ class VOCSegmentation(data.Dataset):
         'tv/monitor'
     ]
 
-    def __init__(self, root, train=True, transform=None, download=False, crop_size=None):
+    def __init__(self, root, set_name, transform=None, download=False, crop_size=None):
         self.root = os.path.expanduser(root)
         _voc_root = self.root
         _train_dir = os.path.join(_voc_root, 'VOCdevkit/VOC2012/JPEGImages/')
         _label_dir = os.path.join(_voc_root,'SegmentationClassAug')
         self.transform = transform
-        self.train = train
+        self.set_name = set_name
         self.crop_size = crop_size
 
         if download:
             self.download()
 
-        if self.train:
+        if self.set_name is 'train':
             _list_f = os.path.join(_voc_root, 'trainaug.txt')
+        elif self.set_name is 'val':
+            _list_f = os.path.join(_voc_root, 'newval.txt')
         else:
-            _list_f = os.path.join(_voc_root, 'val.txt')
+            _list_f = os.path.join(_voc_root, 'test.txt')
         self.datas = []
         self.lables = []
         with open(_list_f, 'r') as lines:
