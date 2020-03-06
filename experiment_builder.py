@@ -137,7 +137,8 @@ class ExperimentBuilder(nn.Module):
 
         self.evaluator.add_batch(target, predicted)
         miou = self.evaluator.Mean_Intersection_over_Union()
-        return loss.data.detach().cpu().numpy(), miou
+        acc = self.evaluator.Pixel_Accuracy()
+        return loss.data.detach().cpu().numpy(), miou, acc
     
     def run_evaluation_iter(self, image, target):
         
@@ -155,7 +156,8 @@ class ExperimentBuilder(nn.Module):
 
         self.evaluator.add_batch(target, predicted)
         miou = self.evaluator.Mean_Intersection_over_Union()
-        return loss.data.detach().cpu().numpy(), miou
+        acc = self.evaluator.Pixel_Accuracy()
+        return loss.data.detach().cpu().numpy(), miou, acc
     
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
         
@@ -168,17 +170,18 @@ class ExperimentBuilder(nn.Module):
     def run_training_epoch(self, current_epoch_losses):
         with tqdm.tqdm(total=len(self.train_data), file=sys.stdout) as pbar_train:  
             for idx, (image, target) in enumerate(self.train_data): 
-                loss, miou = self.run_train_iter(image, target)  
+                loss, miou, acc = self.run_train_iter(image, target)  
                 current_epoch_losses["train_loss"].append(loss)  
-                current_epoch_losses["train_acc"].append(miou)  
+                current_epoch_losses["train_miou"].append(miou)
+                current_epoch_losses["train_acc"].append(acc)  
                 pbar_train.update(1)
                 if(torch.cuda.device_count() >= 1):
                     m = torch.cuda.get_device_properties(0).total_memory/1e9
                     c = torch.cuda.max_memory_cached(0)/1e9
                     a = torch.cuda.max_memory_allocated(0)/1e9
-                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, m, c, a))
+                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, acc, m, c, a))
                 else:
-                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                    pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
                     
 
         return current_epoch_losses
@@ -186,22 +189,24 @@ class ExperimentBuilder(nn.Module):
     def run_validation_epoch(self, current_epoch_losses):
         with tqdm.tqdm(total=len(self.val_data), file=sys.stdout) as pbar_val:  
             for idx, (image, target) in enumerate(self.val_data): 
-                loss, miou = self.run_evaluation_iter(image, target)  
+                loss, miou, acc = self.run_evaluation_iter(image, target)  
                 current_epoch_losses["val_loss"].append(loss) 
-                current_epoch_losses["val_acc"].append(miou)  
+                current_epoch_losses["val_miou"].append(miou)
+                current_epoch_losses["val_acc"].append(acc)  
                 pbar_val.update(1)
-                pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
 
         return current_epoch_losses
     
     def run_testing_epoch(self, current_epoch_losses):
         with tqdm.tqdm(total=len(self.test_data), file=sys.stdout) as pbar_test:  
             for idx, (image, target) in enumerate(self.test_data): 
-                loss, miou = self.run_evaluation_iter(image, target)  
+                loss, miou, acc = self.run_evaluation_iter(image, target)  
                 current_epoch_losses["test_loss"].append(loss) 
-                current_epoch_losses["test_acc"].append(miou)  
+                current_epoch_losses["test_miou"].append(miou)  
+                current_epoch_losses["test_acc"].append(acc)
                 pbar_test.update(1)
-                pbar_test.set_description("Testing: loss: {:.4f}, miou: {:.4f}".format(loss, miou))
+                pbar_test.set_description("Testing: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
 
         return current_epoch_losses
 
@@ -215,19 +220,19 @@ class ExperimentBuilder(nn.Module):
         return state['best_val_model_idx'], state['best_val_model_acc'], state
     
     def run_experiment(self):
-        total_losses = {"train_acc": [], "train_loss": [], "val_acc": [],
+        total_losses = {"train_miou": [], "train_acc": [], "train_loss": [], "val_miou": [], "val_acc": [],
                         "val_loss": [], "curr_epoch": []}  
         for i, epoch_idx in enumerate(range(self.starting_epoch, self.num_epochs)):
             epoch_start_time = time.time()
-            current_epoch_losses = {"train_acc": [], "train_loss": [], "val_acc": [], "val_loss": []}
+            current_epoch_losses = {"train_miou": [], "train_acc": [], "train_loss": [],"val_miou": [], "val_acc": [], "val_loss": []}
 
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
             #print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
 
-            val_mean_accuracy = np.mean(current_epoch_losses['val_acc'])
-            if val_mean_accuracy > self.best_val_model_acc:  
-                self.best_val_model_acc = val_mean_accuracy  
+            val_mean_miou = np.mean(current_epoch_losses['val_miou'])
+            if val_mean_miou > self.best_val_model_acc:  
+                self.best_val_model_acc = val_mean_miou  
                 self.best_val_model_idx = epoch_idx  
 
             for key, value in current_epoch_losses.items():
@@ -256,7 +261,7 @@ class ExperimentBuilder(nn.Module):
             print("Generating test set evaluation metrics")
             self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
                             model_save_name="train_model")
-            current_epoch_losses = {"test_acc": [], "test_loss": []}  
+            current_epoch_losses = {"test_miou": [], "test_acc": [], "test_loss": []}  
 
             current_epoch_losses = self.run_testing_epoch(current_epoch_losses=current_epoch_losses)
 
