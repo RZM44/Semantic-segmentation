@@ -37,6 +37,7 @@ def get_args():
     parser.add_argument('--output_stride', nargs="?", type=int, default=16,
                         help='The output_stride for the network')
 
+    print(sys.argv)
     args = parser.parse_args()
     
     return args

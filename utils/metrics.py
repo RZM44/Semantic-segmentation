@@ -53,7 +53,7 @@ if __name__ == '__main__':
     print("Target\n", y)
     eval.add_batch(y.numpy(), x.numpy())
     print(eval.confusion_matrix)
-    Acc = eval.Pixel_Accuracy_Class()
+    Acc = eval.Pixel_Accuracy()
     Miou = eval.Mean_Intersection_over_Union()
     print("Acc: {}, MIOU: {}".format(Acc, Miou))
     eval.reset()
