@@ -30,6 +30,10 @@ class VOCSegmentation(data.Dataset):
             _list_f = os.path.join(_voc_root, 'trainaug.txt')
         elif self.set_name is 'val':
             _list_f = os.path.join(_voc_root, 'newval.txt')
+        elif self.set_name is 'oldval':
+            _list_f = os.path.join(_voc_root, 'oldval.txt')
+        elif self.set_name is 'oldtrain':
+            _list_f = os.path.join(_voc_root, 'train.txt')
         else:
             _list_f = os.path.join(_voc_root, 'test.txt')
         self.datas = []

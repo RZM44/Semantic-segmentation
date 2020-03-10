@@ -25,8 +25,14 @@ transform_val = trans.Compose([
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
-voc_train = VOCSegmentation(root='./data', set_name='train', transform=transform_train)
-voc_val = VOCSegmentation(root='./data', set_name='val', transform=transform_val)
+if(args.aug == True):
+    voc_train = VOCSegmentation(root='./data', set_name='train', transform=transform_train)
+else:
+    voc_train = VOCSegmentation(root='./data', set_name='oldtrain', transform=transform_train)
+if(args.newval == True):
+    voc_val = VOCSegmentation(root='./data', set_name='val', transform=transform_val)
+else:
+    voc_val =VOCSegmentation(root='./data', set_name='oldval', transform=transform_val)
 voc_test = VOCSegmentation(root='./data', set_name='test', transform=transform_val)
 train_data = torch.utils.data.DataLoader(voc_train, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
 val_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4, drop_last=True)

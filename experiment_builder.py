@@ -158,7 +158,26 @@ class ExperimentBuilder(nn.Module):
         miou = self.evaluator.Mean_Intersection_over_Union()
         acc = self.evaluator.Pixel_Accuracy()
         return loss.data.detach().cpu().numpy(), miou, acc
-    
+   
+    def run_predicted_iter(self, image, target):
+
+        self.eval()
+        self.evaluator.reset()
+        image = image.to(self.device)
+        target = target.to(self.device)
+
+        output = self.model.forward(image)
+        loss = self.criterion(output, target.long())
+
+        predicted = output.data.cpu().numpy()
+        target = target.cpu().numpy()
+        predicted = np.argmax(predicted, axis=1)
+
+        self.evaluator.add_batch(target, predicted)
+        miou = self.evaluator.Mean_Intersection_over_Union()
+        acc = self.evaluator.Pixel_Accuracy()
+        return loss.data.detach().cpu().numpy(), miou, acc, predicted, image, target
+
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
         
         state['network'] = self.model.state_dict()
