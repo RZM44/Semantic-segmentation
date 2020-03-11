@@ -65,8 +65,8 @@ if __name__ == '__main__':
     from utils import transforms as trans
     import numpy as np
     transform_train = trans.Compose([
-          trans.RandomScale((0.5,2.0)),
-          trans.RandomCrop(513),
+          #trans.RandomScale((0.5,2.0)),
+          trans.RandomCrop(256),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
@@ -78,16 +78,16 @@ if __name__ == '__main__':
           ])
     """
     transform_val = trans.Compose([
-          trans.FixScale(513),
-          trans.CenterCrop(513),
+          trans.FixScale((256,256)),
+          #trans.CenterCrop(256),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
 
-    voc_train = VOCSegmentation(root='./data',train=True,transform=transform_train)
+    voc_train = VOCSegmentation(root='./data',set_name='val',transform=transform_val)
 
     #voc_val = VOCSegmentation(root='./data',train=False,transform=transform_val)
-    dataloader = DataLoader(voc_train, batch_size=6, shuffle=True, num_workers=0)
+    dataloader = DataLoader(voc_train, batch_size=1, shuffle=True, num_workers=0)
     #dataloader = DataLoader(voc_val, batch_size=3, shuffle=True, num_workers=0)
     #print(len(dataloader)) 
     for (img, tag) in dataloader:
@@ -102,9 +102,12 @@ if __name__ == '__main__':
         image = image.astype(np.uint8)
         plt.figure()
         plt.title('display')
-        plt.subplot(211)
+        plt.subplot(221)
         plt.imshow(image)
-        plt.subplot(212)
+        plt.subplot(222)
         plt.imshow(target)
+        plt.subplot(223)
+        plt.imshow(image)
+        plt.imshow(target,alpha=0.5)
         break
     plt.show(block=True)
