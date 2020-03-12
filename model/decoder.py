@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from utils.activations import *
 class Decoder(nn.Module):
     def __init__(self, num_classes,activation = 'relu'):
         super(Decoder, self).__init__()
