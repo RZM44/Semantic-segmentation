@@ -1,10 +1,10 @@
 #!/bin/sh
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --partition=Teach-Short
+#SBATCH --partition=Teach-Standard
 #SBATCH --gres=gpu:4
 #SBATCH --mem=12000  # memory in Mb
-#SBATCH --time=0-04:00:00
+#SBATCH --time=0-08:00:00
 
 export CUDA_HOME=/opt/cuda-9.0.176.1/
 
@@ -35,5 +35,5 @@ export DATASET_DIR=${TMP}/datasets/
 
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 #cd ..
-python train.py --batch_size 64 --num_class 21 --crop_size 256 --continue_from_epoch -1 --learn_rate 0.007 --num_epochs 50 --experiment_name train256b64 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
+python train.py --batch_size 32 --num_class 21 --crop_size 64 --continue_from_epoch -1 --learn_rate 0.007 --num_epochs 50 --experiment_name trainc64b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
 
