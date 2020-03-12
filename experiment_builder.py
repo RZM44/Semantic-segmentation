@@ -266,19 +266,20 @@ class ExperimentBuilder(nn.Module):
                 ["{}_{:.4f}".format(key, np.mean(value)) for key, value in current_epoch_losses.items()])
             epoch_elapsed_time = time.time() - epoch_start_time  
             epoch_elapsed_time = "{:.4f}".format(epoch_elapsed_time)
-            print("Epoch {}:".format(epoch_idx), out_string, "epoch time", epoch_elapsed_time, "seconds")
+            print("Epoch {}:".format(epoch_idx),"Iteration {}:".format(self.scheduler.last_epoch), out_string, "epoch time", epoch_elapsed_time, "seconds")
             self.state['current_epoch_idx'] = epoch_idx
             self.state['best_val_model_acc'] = self.best_val_model_acc
             self.state['best_val_model_idx'] = self.best_val_model_idx
             if(self.experiment_name != "test"):
-                self.save_model(model_save_dir=self.experiment_saved_models,
+                if(epoch_idx==0 or (epoch_idx+1)%10==0):
+                    self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx=epoch_idx, state=self.state)
                 self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx='latest', state=self.state)
             
         if(self.experiment_name != "test"):
             print("Generating test set evaluation metrics")
-            self.load_model(model_save_dir=self.experiment_saved_models, model_idx=self.best_val_model_idx,
+            self.load_model(model_save_dir=self.experiment_saved_models, model_idx='latest',
                             model_save_name="train_model")
             current_epoch_losses = {"test_miou": [], "test_acc": [], "test_loss": []}  
 
