@@ -2,19 +2,27 @@ import math
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-
+from utils.activations import *
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None,activation == 'relu'):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1,bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)  
+        self.bn1 = nn.BatchNorm2d(planes) 
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = nn.ReLU(inplace=True)
+
+        if self.activation == 'swish':
+            self.act = swish()
+
+        if self.activation == 'mish':
+            self.act = mish() 
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, dilation=dilation, padding=dilation, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
-        self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
         self.dilation = dilation
@@ -24,11 +32,11 @@ class Bottleneck(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = self.act(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.relu(out)
+        out = self.act(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -37,13 +45,13 @@ class Bottleneck(nn.Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.relu(out)
+        out = self.act(out)
 
         return out
     
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, output_stride=16, pretrained=False):
+    def __init__(self, block, layers, output_stride=16, pretrained=False,activation='relu'):
         self.inplanes = 64
         super(ResNet, self).__init__()
         if output_stride == 16:
@@ -56,11 +64,19 @@ class ResNet(nn.Module):
             blocks = [1, 2, 1]          #blocks = [1, 2, 4]
         else:
             raise NotImplementedError
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = nn.ReLU(inplace=True)
 
+        if self.activation == 'swish':
+            self.act = swish()
+
+        if self.activation == 'mish':
+            self.act = mish()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                 bias=False)
         self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
+        
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], dilation=dilations[0])
@@ -110,7 +126,7 @@ class ResNet(nn.Module):
     def forward(self, input):
         x = self.conv1(input)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = self.act(x)
         x = self.maxpool(x)
 
         x = self.layer1(x)

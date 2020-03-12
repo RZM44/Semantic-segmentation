@@ -2,10 +2,20 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from utils.activations.py import *
 class ASPP_Module(nn.Module):
-    def __init__(self, inplanes, planes, dilation):
+    def __init__(self, inplanes, planes, dilation,activation = 'relu'):
         super(ASPP_Module, self).__init__()
+        self.activation = activation
+        
+        if self.activation == 'relu':
+            self.act = nn.ReLU()
+            
+        if self.activation == 'swish':
+            self.act = swish()
+            
+        if self.activation == 'mish':
+            self.act = mish()
         if dilation == 1:
             kernel_size = 1
             padding = 0
@@ -15,7 +25,7 @@ class ASPP_Module(nn.Module):
         self.atrous_convolution = nn.Conv2d(inplanes, planes, kernel_size=kernel_size,
                                             stride=1, padding=padding, dilation=dilation, bias=False)
         self.bn = nn.BatchNorm2d(planes)
-        self.relu = nn.ReLU()
+       
 
         self._init_weight()
 
@@ -23,7 +33,7 @@ class ASPP_Module(nn.Module):
         x = self.atrous_convolution(x)
         x = self.bn(x)
 
-        return self.relu(x)
+        return self.act(x)
     
     def _init_weight(self):
         for m in self.modules():
@@ -34,7 +44,7 @@ class ASPP_Module(nn.Module):
                 m.bias.data.zero_()
 
 class ASPP(nn.Module):
-    def __init__(self, output_stride, inplanes=2048):
+    def __init__(self, output_stride, inplanes=2048,activation = 'relu'):
         super(ASPP, self).__init__()
         if output_stride == 16:
             dilations = [1, 6, 12, 18]
@@ -42,7 +52,15 @@ class ASPP(nn.Module):
             dilations = [1, 12, 24, 36]
         else:
             raise NotImplementedError
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = nn.ReLU()
 
+        if self.activation == 'swish':
+            self.act = swish()
+
+        if self.activation == 'mish':
+            self.act = mish()
         self.aspp1 = ASPP_Module(inplanes, 256, dilation=dilations[0])
         self.aspp2 = ASPP_Module(inplanes, 256, dilation=dilations[1])
         self.aspp3 = ASPP_Module(inplanes, 256, dilation=dilations[2])
@@ -54,7 +72,7 @@ class ASPP(nn.Module):
                                              nn.ReLU())
         self.conv1 = nn.Conv2d(1280, 256, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(256)
-        self.relu = nn.ReLU()
+        
         #self.dropout = nn.Dropout(0.5)
         self._init_weight()
 
@@ -69,7 +87,7 @@ class ASPP(nn.Module):
         # below structure not show in orginal paper
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = self.act(x)
         # x = self.dropout(x)
         return x
 
