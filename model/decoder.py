@@ -4,13 +4,21 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Decoder(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes,activation = 'relu'):
         super(Decoder, self).__init__()
         low_level_inplanes = 256
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = nn.ReLU()
 
+        if self.activation == 'swish':
+            self.act = swish()
+
+        if self.activation == 'mish':
+            self.act = mish() 
         self.conv1 = nn.Conv2d(low_level_inplanes, 48, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(48)
-        self.relu = nn.ReLU()
+        
         self.last_conv = nn.Sequential(nn.Conv2d(304, 256, kernel_size=3, stride=1, padding=1, bias=False),
                                        nn.BatchNorm2d(256),
                                        nn.ReLU(),
@@ -26,7 +34,7 @@ class Decoder(nn.Module):
     def forward(self, x, low_level_feat):
         low_level_feat = self.conv1(low_level_feat)
         low_level_feat = self.bn1(low_level_feat)
-        low_level_feat = self.relu(low_level_feat)
+        low_level_feat = self.act(low_level_feat)
 
         x = F.interpolate(x, size=low_level_feat.size()[2:], mode='bilinear', align_corners=True)
         x = torch.cat((x, low_level_feat), dim=1)
