@@ -48,7 +48,7 @@ class ExperimentBuilder(nn.Module):
         self.num_epochs = num_epochs
 
         train_params = [{'params': network_model.get_backbone_params(), 'lr': self.learn_rate},
-                        {'params': network_model.get_classifier_params(), 'lr': self.learn_rate * 10}]
+                        {'params': network_model.get_classifier_params(), 'lr': self.learn_rate * 1}]
         self.optimizer = torch.optim.SGD(train_params, momentum=self.mementum, weight_decay=self.weight_decay)
         #self.criterion = FocalLoss(ignore_index=255, size_average=True).to(self.device)
         self.criterion = CrossEntropyLoss(size_average=True, ignore_index=255).to(self.device)
