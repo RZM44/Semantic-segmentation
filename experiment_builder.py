@@ -271,9 +271,9 @@ class ExperimentBuilder(nn.Module):
             self.state['best_val_model_acc'] = self.best_val_model_acc
             self.state['best_val_model_idx'] = self.best_val_model_idx
             if(self.experiment_name != "test"):
-                if(epoch_idx==0 or (epoch_idx+1)%10==0):
-                    self.save_model(model_save_dir=self.experiment_saved_models,
-                            model_save_name="train_model", model_idx=epoch_idx, state=self.state)
+                #if(epoch_idx==0 or (epoch_idx+1)%10==0):
+                #    self.save_model(model_save_dir=self.experiment_saved_models,
+                #            model_save_name="train_model", model_idx=epoch_idx, state=self.state)
                 self.save_model(model_save_dir=self.experiment_saved_models,
                             model_save_name="train_model", model_idx='latest', state=self.state)
             
