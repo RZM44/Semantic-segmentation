@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from model.sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 #from sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 class ASPP_Module(nn.Module):
-    def __init__(self, inplanes, planes, dilation, BatchNorm=nn.BatchNorm2d):
+    def __init__(self, inplanes, planes, dilation, BatchNorm):
         super(ASPP_Module, self).__init__()
         if dilation == 1:
             kernel_size = 1
@@ -38,7 +38,7 @@ class ASPP_Module(nn.Module):
                 m.bias.data.zero_()
 
 class ASPP(nn.Module):
-    def __init__(self, output_stride, BatchNorm=nn.BatchNorm2d, inplanes=2048):
+    def __init__(self, output_stride, BatchNorm, inplanes=2048):
         super(ASPP, self).__init__()
         if output_stride == 16:
             dilations = [1, 6, 12, 18]

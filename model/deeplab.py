@@ -48,7 +48,7 @@ if __name__ == "__main__":
     #from decoder import build_decoder
     #from resnet import build_resnet
     #from sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
-    model = DeepLab(output_stride=16, sy_bn=False)
+    model = DeepLab(output_stride=16, num_classes=21, sy_bn=False)
     model.eval()
     input = torch.rand(1, 3, 213, 213)
     output = model(input)
