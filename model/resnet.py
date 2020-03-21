@@ -2,18 +2,19 @@ import math
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-
+from model.sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
+#from sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None, BatchNorm=None):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1,bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)  
+        self.bn1 = BatchNorm(planes)  
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, dilation=dilation, padding=dilation, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = BatchNorm(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes * 4)
+        self.bn3 = BatchNorm(planes * 4)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
@@ -43,7 +44,7 @@ class Bottleneck(nn.Module):
     
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, output_stride=16, pretrained=False):
+    def __init__(self, block, layers, output_stride=16, BatchNorm=nn.BatchNorm2d, pretrained=False):
         self.inplanes = 64
         super(ResNet, self).__init__()
         if output_stride == 16:
@@ -59,51 +60,51 @@ class ResNet(nn.Module):
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                 bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.bn1 = BatchNorm(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], dilation=dilations[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=strides[1], dilation=dilations[1])
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilations[2])
-        self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilations[3])
+        self.layer1 = self._make_layer(block, 64, layers[0], stride=strides[0], dilation=dilations[0], BatchNorm=BatchNorm)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=strides[1], dilation=dilations[1], BatchNorm=BatchNorm)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilations[2], BatchNorm=BatchNorm)
+        self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilations[3], BatchNorm=BatchNorm)
 
         self._init_weight()
 
         if pretrained:
             self._load_pretrained_model()
    
-    def _make_layer(self, block, planes, blocks, stride=1, dilation=1):
+    def _make_layer(self, block, planes, blocks, stride=1, dilation=1, BatchNorm=nn.BatchNorm2d):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
+                BatchNorm(planes * block.expansion),
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, dilation, downsample))
+        layers.append(block(self.inplanes, planes, stride, dilation, downsample, BatchNorm=BatchNorm))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, dilation=dilation))
+            layers.append(block(self.inplanes, planes, dilation=dilation, BatchNorm=BatchNorm))
 
         return nn.Sequential(*layers)
 
-    def _make_MG_unit(self, block, planes, blocks, stride=1, dilation=1):
+    def _make_MG_unit(self, block, planes, blocks, stride=1, dilation=1, BatchNorm=nn.BatchNorm2d):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
+                BatchNorm(planes * block.expansion),
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, dilation=blocks[0]*dilation, downsample=downsample))
+        layers.append(block(self.inplanes, planes, stride, dilation=blocks[0]*dilation, downsample=downsample, BatchNorm=BatchNorm))
         self.inplanes = planes * block.expansion
         for i in range(1, len(blocks)):
-            layers.append(block(self.inplanes, planes, stride=1, dilation=blocks[i]*dilation))
+            layers.append(block(self.inplanes, planes, stride=1, dilation=blocks[i]*dilation, BatchNorm=BatchNorm))
 
         return nn.Sequential(*layers)
 
@@ -129,6 +130,9 @@ class ResNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+            elif isinstance(m,  SynchronizedBatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
     def _load_pretrained_model(self):
         pretrain_dict = model_zoo.load_url('https://download.pytorch.org/models/resnet101-5d3b4d8f.pth')
@@ -141,10 +145,10 @@ class ResNet(nn.Module):
         state_dict.update(model_dict)
         self.load_state_dict(state_dict)
 
-def ResNet_backbone(output_stride=16, pretrained=False):
-    model = ResNet(Bottleneck, [3, 4, 23, 3], output_stride, pretrained)
+def ResNet_backbone(output_stride=16, BatchNorm=nn.BatchNorm2d, pretrained=False):
+    model = ResNet(Bottleneck, [3, 4, 23, 3], output_stride, BatchNorm, pretrained)
     #model = ResNet(Bottleneck, [3, 4, 6, 3], output_stride, pretrained) 
     return model 
 
-def build_resnet(output_stride, pretrained):
-    return ResNet_backbone(output_stride, pretrained)
+def build_resnet(output_stride, BatchNorm, pretrained):
+    return ResNet_backbone(output_stride, BatchNorm, pretrained)

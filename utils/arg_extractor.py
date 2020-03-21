@@ -36,8 +36,9 @@ def get_args():
                         help='Weight decay to use for mementum')
     parser.add_argument('--output_stride', nargs="?", type=int, default=16,
                         help='The output_stride for the network')
-    parser.add_argument('--aug', nargs="?", type=str2bool, default=True, help='weather use aug dataset')
-    parser.add_argument('--newval', nargs="?", type=str2bool, default=True, help='weather use newval dataset')
+    parser.add_argument('--aug', nargs="?", type=str2bool, default=True, help='wheather use aug dataset')
+    parser.add_argument('--newval', nargs="?", type=str2bool, default=True, help='whether use newval dataset')
+    parser.add_argument('--sy_bn', nargs="?", type=str2bool, default=False, help='whether to use sy_bn')
     print(sys.argv)
     args = parser.parse_args()
     

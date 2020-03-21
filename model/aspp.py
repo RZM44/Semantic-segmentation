@@ -2,9 +2,10 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from model.sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
+#from sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 class ASPP_Module(nn.Module):
-    def __init__(self, inplanes, planes, dilation):
+    def __init__(self, inplanes, planes, dilation, BatchNorm=nn.BatchNorm2d):
         super(ASPP_Module, self).__init__()
         if dilation == 1:
             kernel_size = 1
@@ -14,7 +15,7 @@ class ASPP_Module(nn.Module):
             padding = dilation
         self.atrous_convolution = nn.Conv2d(inplanes, planes, kernel_size=kernel_size,
                                             stride=1, padding=padding, dilation=dilation, bias=False)
-        self.bn = nn.BatchNorm2d(planes)
+        self.bn = BatchNorm(planes)
         self.relu = nn.ReLU()
 
         self._init_weight()
@@ -32,9 +33,12 @@ class ASPP_Module(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+            elif isinstance(m, SynchronizedBatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
 class ASPP(nn.Module):
-    def __init__(self, output_stride, inplanes=2048):
+    def __init__(self, output_stride, BatchNorm=nn.BatchNorm2d, inplanes=2048):
         super(ASPP, self).__init__()
         if output_stride == 16:
             dilations = [1, 6, 12, 18]
@@ -43,17 +47,17 @@ class ASPP(nn.Module):
         else:
             raise NotImplementedError
 
-        self.aspp1 = ASPP_Module(inplanes, 256, dilation=dilations[0])
-        self.aspp2 = ASPP_Module(inplanes, 256, dilation=dilations[1])
-        self.aspp3 = ASPP_Module(inplanes, 256, dilation=dilations[2])
-        self.aspp4 = ASPP_Module(inplanes, 256, dilation=dilations[3])
+        self.aspp1 = ASPP_Module(inplanes, 256, dilation=dilations[0], BatchNorm=BatchNorm)
+        self.aspp2 = ASPP_Module(inplanes, 256, dilation=dilations[1], BatchNorm=BatchNorm)
+        self.aspp3 = ASPP_Module(inplanes, 256, dilation=dilations[2], BatchNorm=BatchNorm)
+        self.aspp4 = ASPP_Module(inplanes, 256, dilation=dilations[3], BatchNorm=BatchNorm)
 
         self.global_avg_pool = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
                                              nn.Conv2d(inplanes, 256, 1, stride=1, bias=False),
-                                             nn.BatchNorm2d(256),
+                                             BatchNorm(256),
                                              nn.ReLU())
         self.conv1 = nn.Conv2d(1280, 256, 1, bias=False)
-        self.bn1 = nn.BatchNorm2d(256)
+        self.bn1 = BatchNorm(256)
         self.relu = nn.ReLU()
         #self.dropout = nn.Dropout(0.5)
         self._init_weight()
@@ -80,7 +84,9 @@ class ASPP(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
+            elif isinstance(m,  SynchronizedBatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
-
-def build_aspp(output_stride):
-    return ASPP(output_stride)
+def build_aspp(output_stride, BatchNorm):
+    return ASPP(output_stride, BatchNorm)
