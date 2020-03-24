@@ -10,10 +10,12 @@ from model.sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 class DeepLab(nn.Module):
     def __init__(self, output_stride=16, num_classes=21, sy_bn=True):
         super(DeepLab, self).__init__()
-        if(sy_bn == True):
-          BatchNorm = SynchronizedBatchNorm2d
+        if (sy_bn == True):
+            BatchNorm = SynchronizedBatchNorm2d
+            print("use SynchronizedBatchNorm")
         else:
-          BatchNorm = nn.BatchNorm2d
+            BatchNorm = nn.BatchNorm2d
+            print("use BatchNorm")
 
         self.backbone = build_resnet(output_stride, BatchNorm, pretrained=True)
         self.aspp = build_aspp(output_stride, BatchNorm)
