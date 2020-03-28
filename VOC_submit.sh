@@ -35,5 +35,5 @@ export DATASET_DIR=${TMP}/datasets/
 
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 #cd ..
-python train.py --batch_size 16 --num_class 21 --crop_size 256 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 50 --experiment_name bnc256b16_2 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
+python train.py --batch_size 32 --num_class 21 --crop_size 256 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 50 --experiment_name dropc256b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
 
