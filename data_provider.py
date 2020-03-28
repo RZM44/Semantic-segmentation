@@ -22,7 +22,8 @@ class VOCSegmentation(data.Dataset):
         self.transform = transform
         self.set_name = set_name
         self.crop_size = crop_size
-
+        self.multi_scale = None
+        
         if download:
             self.download()
 
@@ -58,6 +59,10 @@ class VOCSegmentation(data.Dataset):
 
     def __len__(self):
         return len(self.datas)
+    
+    def set_multi_scale(self):
+        scale = np.random.randint(1, 3)
+        self.multi_scale = trans.RandomCrop(scale*64)
 
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
@@ -66,7 +71,7 @@ if __name__ == '__main__':
     import numpy as np
     transform_train = trans.Compose([
           #trans.RandomScale((0.5,2.0)),
-          trans.RandomCrop(256),
+          #trans.RandomCrop(256),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
@@ -90,6 +95,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(voc_train, batch_size=1, shuffle=True, num_workers=0)
     #dataloader = DataLoader(voc_val, batch_size=3, shuffle=True, num_workers=0)
     #print(len(dataloader)) 
+    dataloader.dataset.set_multi_scale()
     for (img, tag) in dataloader:
         image = img[0]
         target = tag[0]
@@ -102,11 +108,32 @@ if __name__ == '__main__':
         image = image.astype(np.uint8)
         plt.figure()
         plt.title('display')
-        plt.subplot(221)
+        plt.subplot(231)
         plt.imshow(image)
-        plt.subplot(222)
+        plt.subplot(232)
         plt.imshow(target)
-        plt.subplot(223)
+        plt.subplot(233)
+        plt.imshow(image)
+        plt.imshow(target,alpha=0.5)
+        break
+
+    for (img, tag) in dataloader:
+        image = img[0]
+        target = tag[0]
+        image = image.numpy()
+        target = target.numpy().astype(np.uint8)
+        image = image.transpose((1,2,0))
+        image *= (0.229, 0.224, 0.225)
+        image += (0.485, 0.456, 0.406)
+        image *= 255.0
+        image = image.astype(np.uint8)
+        #plt.figure()
+        #plt.title('display')
+        plt.subplot(234)
+        plt.imshow(image)
+        plt.subplot(235)
+        plt.imshow(target)
+        plt.subplot(236)
         plt.imshow(image)
         plt.imshow(target,alpha=0.5)
         break
