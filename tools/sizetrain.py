@@ -13,27 +13,20 @@ torch.manual_seed(seed=args.seed)
 
 transform_train = trans.Compose([
           trans.RandomHorizontalFlip(),
-          trans.RandomScale((0.5,2.0)),
-          trans.RandomCrop(args.crop_size),
+          trans.FixScale((args.crop_size,args.crop_size)),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
 
 transform_val = trans.Compose([
-          trans.FixScale(args.crop_size),
-          trans.CenterCrop(args.crop_size),
+          trans.FixScale((args.crop_size,args.crop_size)),
+          #trans.CenterCrop(args.crop_size),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
-if(args.aug == True):
-    voc_train = VOCSegmentation(root='./data', set_name='train')
-else:
-    voc_train = VOCSegmentation(root='./data', set_name='oldtrain')
-if(args.newval == True):
-    voc_val = VOCSegmentation(root='./data', set_name='val')
-else:
-    voc_val =VOCSegmentation(root='./data', set_name='oldval')
-voc_test = VOCSegmentation(root='./data', set_name='test')
+voc_train = VOCSegmentation(root='./data', set_name='train', transform=transform_train)
+voc_val = VOCSegmentation(root='./data', set_name='val', transform=transform_val)
+voc_test = VOCSegmentation(root='./data', set_name='test', transform=transform_val)
 train_data = torch.utils.data.DataLoader(voc_train, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
 val_data = torch.utils.data.DataLoader(voc_val, batch_size=args.batch_size, shuffle=False, num_workers=4, drop_last=True)
 test_data = torch.utils.data.DataLoader(voc_test, batch_size=args.batch_size, shuffle=False, num_workers=4, drop_last=True)

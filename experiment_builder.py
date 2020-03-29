@@ -244,7 +244,12 @@ class ExperimentBuilder(nn.Module):
         for i, epoch_idx in enumerate(range(self.starting_epoch, self.num_epochs)):
             epoch_start_time = time.time()
             current_epoch_losses = {"train_miou": [], "train_acc": [], "train_loss": [],"val_miou": [], "val_acc": [], "val_loss": []}
-
+            scalelist = np.array([64,128,256])
+            index = np.random.randint(1,4)
+            scale = scalelist[index]
+            self.train_data.dataset.set_multi_scale(scale)
+            self.val_data.dataset.set_multi_scale(scale)
+            self.test_data.dataset.set_multi_scale(scale)
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
             #print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
@@ -266,7 +271,7 @@ class ExperimentBuilder(nn.Module):
                 ["{}_{:.4f}".format(key, np.mean(value)) for key, value in current_epoch_losses.items()])
             epoch_elapsed_time = time.time() - epoch_start_time  
             epoch_elapsed_time = "{:.4f}".format(epoch_elapsed_time)
-            print("Epoch {}:".format(epoch_idx),"Iteration {}:".format(self.scheduler.last_epoch), out_string, "epoch time", epoch_elapsed_time, "seconds")
+            print("Epoch {}:".format(epoch_idx),"Iteration {}:".format(self.scheduler.last_epoch), "scale {}".format(scale), out_string, "epoch time", epoch_elapsed_time, "seconds")
             self.state['current_epoch_idx'] = epoch_idx
             self.state['best_val_model_acc'] = self.best_val_model_acc
             self.state['best_val_model_idx'] = self.best_val_model_idx

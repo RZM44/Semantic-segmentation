@@ -116,6 +116,15 @@ class FixScale(object):
     def __call__(self, image, target):
         return F.resize(image, self.target_size, Image.BILINEAR), F.resize(target, self.target_size, Image.NEAREST)
 
+class FixRangeScale(object):
+    """ Fixscale the given PIL Image 
+    """
+    def __init__(self, scale_target_size):
+        self.target_size = (scale_target_size, scale_target_size)
+
+    def __call__(self, image, target):
+        return F.resize(image, self.target_size, Image.BILINEAR), F.resize(target, self.target_size, Image.NEAREST)
+
 class CenterCrop(object):
     """ Crop the given PIL Image at center  with given size
     """

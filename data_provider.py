@@ -3,6 +3,7 @@ import os
 import numpy as np
 from PIL import Image
 import torch.utils.data as data
+from utils import transforms as trans
 class VOCSegmentation(data.Dataset):
     """Dataset class for PASCAL VOC 2012
        totally 21 classes(including backgroud)
@@ -23,7 +24,6 @@ class VOCSegmentation(data.Dataset):
         self.set_name = set_name
         self.crop_size = crop_size
         self.multi_scale = None
-        
         if download:
             self.download()
 
@@ -51,51 +51,76 @@ class VOCSegmentation(data.Dataset):
     def __getitem__(self, index):
         image = Image.open(self.datas[index]).convert('RGB')
         target = Image.open(self.lables[index])
-        
+
         if self.transform is not None:
             image, target = self.transform(image, target)
         
+        if self.multi_scale is not None:
+            image, target = self.multi_scale(image, target)
         return image, target
 
     def __len__(self):
         return len(self.datas)
     
-    def set_multi_scale(self):
-        scale = np.random.randint(1, 3)
-        self.multi_scale = trans.RandomCrop(scale*64)
-
+    def ran_multi_scale(self):
+        scale = np.random.randint(1, 3)*64
+        if self.set_name is 'train' or 'oldtrain':
+            self.multi_scale = trans.Compose([
+                      trans.RandomScale((0.5,2.0)),
+                      trans.RandomCrop(scale),
+                      trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                      trans.ToTensor(),
+                    ])
+        else:
+            self.multi_scale = trans.Compose([
+                      trans.FixScale((scale)),
+                      trans.CenterCrop(scale),
+                      trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                      trans.ToTensor(),
+                    ])
+    def set_multi_scale(self, scale):
+        if self.set_name is 'train' or 'oldtrain':
+            self.multi_scale = trans.Compose([
+                      trans.RandomScale((0.5,2.0)),
+                      trans.RandomCrop(scale),
+                      trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                      trans.ToTensor(),
+                    ])
+        else:
+            self.multi_scale = trans.Compose([
+                      trans.FixScale((scale)),
+                      trans.CenterCrop(scale),
+                      trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                      trans.ToTensor(),
+                    ])
 if __name__ == '__main__':
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
     from utils import transforms as trans
     import numpy as np
+    from tools import prediction
     transform_train = trans.Compose([
-          #trans.RandomScale((0.5,2.0)),
+          trans.RandomScale((0.5,2.0)),
           #trans.RandomCrop(256),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
 
-    """ 
-    transform_test = transforms.Compose([
-          transforms.ToTensor(),
-          transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-          ])
-    """
     transform_val = trans.Compose([
           trans.FixScale((256,256)),
-          #trans.CenterCrop(256),
+          trans.CenterCrop(256),
           trans.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
           trans.ToTensor(),
           ])
-
-    voc_train = VOCSegmentation(root='./data',set_name='val',transform=transform_val)
-
+    
+    voc_train = VOCSegmentation(root='./data',set_name='train')
+    voc_val = VOCSegmentation(root='./data',set_name='val')
+    #np.random.seed(32)
     #voc_val = VOCSegmentation(root='./data',train=False,transform=transform_val)
-    dataloader = DataLoader(voc_train, batch_size=1, shuffle=True, num_workers=0)
+    dataloader = DataLoader(voc_train, batch_size=2, shuffle=True, num_workers=4) #,worker_init_fn=worker_init_fn)
+    dataloader_val = DataLoader(voc_val, batch_size=2, shuffle=True, num_workers=4) #,worker_init_fn=worker_init_fn)
     #dataloader = DataLoader(voc_val, batch_size=3, shuffle=True, num_workers=0)
-    #print(len(dataloader)) 
-    dataloader.dataset.set_multi_scale()
+    dataloader.dataset.set_multi_scale(512)
     for (img, tag) in dataloader:
         image = img[0]
         target = tag[0]
@@ -106,6 +131,7 @@ if __name__ == '__main__':
         image += (0.485, 0.456, 0.406)
         image *= 255.0
         image = image.astype(np.uint8)
+        target = prediction.decode_segmap(target)
         plt.figure()
         plt.title('display')
         plt.subplot(231)
@@ -116,8 +142,9 @@ if __name__ == '__main__':
         plt.imshow(image)
         plt.imshow(target,alpha=0.5)
         break
-
-    for (img, tag) in dataloader:
+    
+    dataloader_val.dataset.set_multi_scale(512)
+    for (img, tag) in dataloader_val:
         image = img[0]
         target = tag[0]
         image = image.numpy()
@@ -127,6 +154,7 @@ if __name__ == '__main__':
         image += (0.485, 0.456, 0.406)
         image *= 255.0
         image = image.astype(np.uint8)
+        target = prediction.decode_segmap(target)
         #plt.figure()
         #plt.title('display')
         plt.subplot(234)
