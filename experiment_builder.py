@@ -201,7 +201,7 @@ class ExperimentBuilder(nn.Module):
                     pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}, memory: {:.2f}GB, cached:{:.2f}GB, allocated:{:.2f}GB".format(loss, miou, acc, m, c, a))
                 else:
                     pbar_train.set_description("Training: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
-                    
+                self.train_data.dataset.ran_multi_scale()
 
         return current_epoch_losses
     
@@ -214,7 +214,8 @@ class ExperimentBuilder(nn.Module):
                 current_epoch_losses["val_acc"].append(acc)  
                 pbar_val.update(1)
                 pbar_val.set_description("Validating: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
-
+                self.val_data.dataset.ran_multi_scale()
+                    
         return current_epoch_losses
     
     def run_testing_epoch(self, current_epoch_losses):
@@ -226,7 +227,7 @@ class ExperimentBuilder(nn.Module):
                 current_epoch_losses["test_acc"].append(acc)
                 pbar_test.update(1)
                 pbar_test.set_description("Testing: loss: {:.4f}, miou: {:.4f}, Pacc: {:.4f}".format(loss, miou, acc))
-
+                self.test_data.dataset.ran_multi_scale()
         return current_epoch_losses
 
     def load_model(self, model_save_dir, model_save_name, model_idx):
@@ -245,11 +246,16 @@ class ExperimentBuilder(nn.Module):
             epoch_start_time = time.time()
             current_epoch_losses = {"train_miou": [], "train_acc": [], "train_loss": [],"val_miou": [], "val_acc": [], "val_loss": []}
             scalelist = np.array([64,128,256])
-            index = np.random.randint(1,4)
+            index = np.random.randint(0,3)
             scale = scalelist[index]
-            self.train_data.dataset.set_multi_scale(scale)
-            self.val_data.dataset.set_multi_scale(scale)
-            self.test_data.dataset.set_multi_scale(scale)
+            #scale = np.random.randint(64,257)
+            scale = "batch"
+            #self.train_data.dataset.set_multi_scale(scale)
+            #self.val_data.dataset.set_multi_scale(scale)
+            #self.test_data.dataset.set_multi_scale(scale)
+            self.train_data.dataset.ran_multi_scale()
+            self.val_data.dataset.ran_multi_scale()
+            self.test_data.dataset.ran_multi_scale()
             current_epoch_losses = self.run_training_epoch(current_epoch_losses)
             #print(self.optimizer.param_groups[0]['lr'])
             current_epoch_losses = self.run_validation_epoch(current_epoch_losses)
@@ -266,7 +272,6 @@ class ExperimentBuilder(nn.Module):
             save_statistics(experiment_log_dir=self.experiment_logs, filename='summary.csv',
                             stats_dict=total_losses, current_epoch=i,
                             continue_from_mode=True if (self.starting_epoch != 0 or i > 0) else False) 
-
             out_string = "_".join(
                 ["{}_{:.4f}".format(key, np.mean(value)) for key, value in current_epoch_losses.items()])
             epoch_elapsed_time = time.time() - epoch_start_time  
