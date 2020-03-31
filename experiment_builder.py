@@ -245,9 +245,9 @@ class ExperimentBuilder(nn.Module):
         for i, epoch_idx in enumerate(range(self.starting_epoch, self.num_epochs)):
             epoch_start_time = time.time()
             current_epoch_losses = {"train_miou": [], "train_acc": [], "train_loss": [],"val_miou": [], "val_acc": [], "val_loss": []}
-            scalelist = np.array([64,128,256])
-            index = np.random.randint(0,3)
-            scale = scalelist[index]
+            #scalelist = np.array([64,128,256])
+            #index = np.random.randint(0,3)
+            #scale = scalelist[index]
             #scale = np.random.randint(64,257)
             scale = "batch"
             #self.train_data.dataset.set_multi_scale(scale)

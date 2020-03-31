@@ -63,9 +63,10 @@ class VOCSegmentation(data.Dataset):
         return len(self.datas)
     
     def ran_multi_scale(self):
-        scalelist = np.array([64,128,256])
-        index = np.random.randint(0, 3)
-        scale = scalelist[index]
+        #scalelist = np.array([64,128,256])
+        #index = np.random.randint(0, 3)
+        #scale = scalelist[index]
+        scale = np.random.randint(64,257)
         if self.set_name is 'train' or 'oldtrain':
             self.multi_scale = trans.Compose([
                       trans.RandomScale((0.5,2.0)),
@@ -138,10 +139,13 @@ if __name__ == '__main__':
         plt.title('display')
         plt.subplot(231)
         plt.imshow(image)
+        plt.axis('off')
         plt.subplot(232)
         plt.imshow(target)
+        plt.axis('off')
         plt.subplot(233)
         plt.imshow(image)
+        plt.axis('off')
         plt.imshow(target,alpha=0.5)
         break
     
