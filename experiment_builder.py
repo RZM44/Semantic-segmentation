@@ -88,7 +88,7 @@ class ExperimentBuilder(nn.Module):
                     model_save_dir=self.experiment_saved_models, model_save_name="train_model",
                     model_idx='latest')  
                 self.starting_epoch = self.state['current_epoch_idx'] + 1
-                self.scheduler.step()
+                #self.scheduler.step()
                 self.scheduler.last_epoch = self.state['last_epoch']
                 print("restart from epoch ",self.state['current_epoch_idx'])
                 print("backbone learning rate: ", self.optimizer.param_groups[0]['lr'])
@@ -176,7 +176,7 @@ class ExperimentBuilder(nn.Module):
         self.evaluator.add_batch(target, predicted)
         miou = self.evaluator.Mean_Intersection_over_Union()
         acc = self.evaluator.Pixel_Accuracy()
-        return loss.data.detach().cpu().numpy(), miou, acc, predicted, image, target
+        return predicted
 
     def save_model(self, model_save_dir, model_save_name, model_idx, state):
         

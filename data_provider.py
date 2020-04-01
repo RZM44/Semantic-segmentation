@@ -135,4 +135,4 @@ if __name__ == '__main__':
         plt.imshow(image)
         plt.imshow(target,alpha=0.5)
         break
-    plt.show(block=True)
+    #plt.show(block=True)
