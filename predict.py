@@ -73,7 +73,8 @@ for idx, (img, tag) in enumerate(val_data):
         target = prediction.decode_segmap(target)
         predict = prediction.decode_segmap(predict)
         fig = plt.figure()
-        plt.title('{}_{}'.format("Miou: "+ str(miou), "Pixelacc: "+ str(acc)))
+        fig.suptitle('Miou: {:.4f} Pixelacc {:.4f}'.format(miou, acc))
+        plt.tight_layout()
         plt.subplot(131)
         plt.imshow(image)
         plt.axis('off')
@@ -84,7 +85,7 @@ for idx, (img, tag) in enumerate(val_data):
         plt.imshow(predict)
         #plt.imshow(target,alpha=0.5)
         plt.axis('off')
-        fig.savefig('./image/'+ str(i) + '.png')
+        fig.savefig('./image/'+args.experiment_name+'/'+ str(i) + '.png')
         plt.close(fig)
         print("image save success")
     break
