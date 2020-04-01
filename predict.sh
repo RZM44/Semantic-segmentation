@@ -35,4 +35,7 @@ export DATASET_DIR=${TMP}/datasets/
 export MPLBACKEND="agg"
 source /home/${STUDENT_ID}/miniconda3/bin/activate mlp
 #cd ..
-python predict.py --batch_size 32 --num_class 21 --crop_size 256 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 52 --experiment_name dropc256b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
+#cd ..
+python predict.py --batch_size 32 --num_class 21 --crop_size 64 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 52 --experiment_name trainc64b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
+python predict.py --batch_size 32 --num_class 21 --crop_size 128 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 52 --experiment_name trainc128b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16
+python predict.py --batch_size 32 --num_class 21 --crop_size 256 --continue_from_epoch -2 --learn_rate 0.007 --num_epochs 52 --experiment_name trainc256b32 --use_gpu True --mementum 0.9 --weight_decay 5e-4 --output_stride 16

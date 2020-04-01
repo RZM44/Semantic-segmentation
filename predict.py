@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import os
 from data_provider import VOCSegmentation
 from experiment_builder import ExperimentBuilder
 from utils.arg_extractor import get_args
@@ -52,7 +53,9 @@ custom_net = DeepLab(args.output_stride, args.num_class)
 ss_experiment = ExperimentBuilder(network_model=custom_net, num_class=args.num_class, experiment_name=args.experiment_name, num_epochs=args.num_epochs, train_data=train_data, val_data=val_data, test_data=test_data, learn_rate=args.learn_rate, mementum=args.mementum, weight_decay=args.weight_decay, use_gpu=args.use_gpu, continue_from_epoch=args.continue_from_epoch)
 
 plt.switch_backend('agg')
-
+dirName = './image/'+args.experiment_name
+if not os.path.exists(dirName):
+  os.mkdir(dirName)
 evaluator = Evaluator(args.num_class)
 for idx, (img, tag) in enumerate(val_data):
     predicts= ss_experiment.run_predicted_iter(img, tag)
@@ -73,7 +76,7 @@ for idx, (img, tag) in enumerate(val_data):
         target = prediction.decode_segmap(target)
         predict = prediction.decode_segmap(predict)
         fig = plt.figure()
-        fig.suptitle('Miou: {:.4f} Pixelacc {:.4f}'.format(miou, acc))
+        fig.suptitle('Image size: {} Miou: {:.4f} Pixelacc {:.4f}'.format(args.crop_size, miou, acc))
         plt.tight_layout()
         plt.subplot(131)
         plt.imshow(image)
@@ -85,10 +88,11 @@ for idx, (img, tag) in enumerate(val_data):
         plt.imshow(predict)
         #plt.imshow(target,alpha=0.5)
         plt.axis('off')
-        fig.savefig('./image/'+args.experiment_name+'/'+ str(i) + '.png')
+        fig.savefig(dirName+ '/'+ str(i) + '.png')
         plt.close(fig)
-        print("image save success")
+        #print("image save success")
     break
+print("save success")
 
 
 
