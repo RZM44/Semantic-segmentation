@@ -1,5 +1,5 @@
 # Semantic-segmentation
- Group coursework for the Machine Learning Practical course at the University of Edinburgh
+ Group coursework for the Machine Learning Practical course at the UOE
 ## Clone the project
 ```bash
 git clone https://github.com/ZQZ44/Semantic-segmentation.git
